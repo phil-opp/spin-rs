@@ -1,0 +1,3 @@
+var searchIndex = {};
+searchIndex['spinlock'] = {"items":[[0,"","spinlock","This crate provides a thread-safe data container."],[1,"Spinlock","","A wrapper for the data giving access in a thread-safe manner"],[1,"SpinlockGuard","","A guard to which the protected data can be accessed"],[10,"new","","Creates a new spinlock wrapping the supplied data.",0],[10,"lock","","Locks the spinlock and returns a guard.",0],[10,"deref","","",1],[10,"deref_mut","","",1],[10,"drop","","The dropping of the SpinlockGuard will release the lock it was created from.",1]],"paths":[[1,"Spinlock"],[1,"SpinlockGuard"]]};
+initSearch(searchIndex);

@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `spinlock` crate.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, spinlock">
+
+    <title>spinlock - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../main.css">
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <section class="sidebar">
+        
+        <p class='location'></p>
+    </section>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press 'S' to search, '?' for more options..."
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content mod">
+<h1 class='fqn'><span class='in-band'>Crate <a class='mod' href=''>spinlock</a><wbr><a class='stability Experimental' title=''>Experimental</a></span><span class='out-of-band'><a href='stability.html'>[stability]</a> <span id='render-detail'>
+            <a id="collapse-all" href="#">[-]
+            </a>&nbsp;<a id="expand-all" href="#">[+]</a>
+        </span><a id='src-0' href='../src/spinlock/home/travis/build/mvdnes/spinlock-rs/src/lib.rs.html#1-189'>[src]</a></span></h1>
+<div class='docblock'><p>This crate provides a thread-safe data container.</p>
+
+<h1 id="description" class='section-header'><a
+                           href="#description">Description</a></h1>
+<p>This structure behaves a lot like a normal Mutex. There are some differences:</p>
+
+<ul>
+<li>It may be used outside the runtime.
+
+<ul>
+<li>A normal mutex will fail when used without the runtime, this will just lock</li>
+<li>When the runtime is present, it will call the deschedule function when appropriate</li>
+</ul></li>
+<li>No lock poisoning. When a fail occurs when the lock is held, no guarantees are made</li>
+</ul>
+
+<p>When calling rust functions from bare threads, such as C <code>pthread</code>s, this lock will be very
+helpfull. In other cases however, you are encouraged to use the locks from the standard
+library.</p>
+
+<h1 id="simple-example" class='section-header'><a
+                           href="#simple-example">Simple example</a></h1><pre class='rust '>
+<span class='kw'>use</span> <span class='ident'>spinlock</span>::<span class='ident'>Spinlock</span>;
+<span class='kw'>let</span> <span class='ident'>spinlock</span> <span class='op'>=</span> <span class='ident'>Spinlock</span>::<span class='ident'>new</span>(<span class='number'>0u</span>);
+
+<span class='comment'>// Modify the data</span>
+{
+    <span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>data</span> <span class='op'>=</span> <span class='ident'>spinlock</span>.<span class='ident'>lock</span>();
+    <span class='op'>*</span><span class='ident'>data</span> <span class='op'>=</span> <span class='number'>2</span>;
+}
+
+<span class='comment'>// Read the data</span>
+<span class='kw'>let</span> <span class='ident'>answer</span> <span class='op'>=</span>
+{
+    <span class='kw'>let</span> <span class='ident'>data</span> <span class='op'>=</span> <span class='ident'>spinlock</span>.<span class='ident'>lock</span>();
+    <span class='op'>*</span><span class='ident'>data</span>
+};
+
+<span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='ident'>answer</span>, <span class='number'>2u</span>);
+</pre>
+
+<h1 id="thread-safety-example" class='section-header'><a
+                           href="#thread-safety-example">Thread-safety example</a></h1><pre class='rust '>
+<span class='kw'>use</span> <span class='ident'>spinlock</span>::<span class='ident'>Spinlock</span>;
+<span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>sync</span>::{<span class='ident'>Arc</span>, <span class='ident'>Barrier</span>};
+
+<span class='kw'>let</span> <span class='ident'>numthreads</span> <span class='op'>=</span> <span class='number'>1000</span>;
+<span class='kw'>let</span> <span class='ident'>spinlock</span> <span class='op'>=</span> <span class='ident'>Arc</span>::<span class='ident'>new</span>(<span class='ident'>Spinlock</span>::<span class='ident'>new</span>(<span class='number'>0u</span>));
+
+<span class='comment'>// We use a barrier to ensure the readout happens after all writing</span>
+<span class='kw'>let</span> <span class='ident'>barrier</span> <span class='op'>=</span> <span class='ident'>Arc</span>::<span class='ident'>new</span>(<span class='ident'>Barrier</span>::<span class='ident'>new</span>(<span class='ident'>numthreads</span> <span class='op'>+</span> <span class='number'>1</span>));
+
+<span class='kw'>for</span> _ <span class='kw'>in</span> <span class='ident'>range</span>(<span class='number'>0</span>, <span class='ident'>numthreads</span>)
+{
+    <span class='kw'>let</span> <span class='ident'>my_barrier</span> <span class='op'>=</span> <span class='ident'>barrier</span>.<span class='ident'>clone</span>();
+    <span class='kw'>let</span> <span class='ident'>my_lock</span> <span class='op'>=</span> <span class='ident'>spinlock</span>.<span class='ident'>clone</span>();
+    <span class='ident'>spawn</span>(<span class='kw'>proc</span>()
+    {
+        <span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>guard</span> <span class='op'>=</span> <span class='ident'>my_lock</span>.<span class='ident'>lock</span>();
+        <span class='op'>*</span><span class='ident'>guard</span> <span class='op'>+=</span> <span class='number'>1</span>;
+
+        <span class='comment'>// Release the lock to prevent a deadlock</span>
+        <span class='ident'>drop</span>(<span class='ident'>guard</span>);
+        <span class='ident'>my_barrier</span>.<span class='ident'>wait</span>();
+    });
+}
+
+<span class='ident'>barrier</span>.<span class='ident'>wait</span>();
+
+<span class='kw'>let</span> <span class='ident'>answer</span> <span class='op'>=</span> { <span class='op'>*</span><span class='ident'>spinlock</span>.<span class='ident'>lock</span>() };
+<span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='ident'>answer</span>, <span class='ident'>numthreads</span>);
+</pre>
+</div><h2 id='structs' class='section-header'><a href="#structs">Structs</a></h2>
+<table>
+                    <tr>
+                        <td><a class='stability Experimental' title='Experimental'></a><a class='struct' href='struct.Spinlock.html'
+                               title='spinlock::Spinlock'>Spinlock</a></td>
+                        <td class='docblock short'><p>A wrapper for the data giving access in a thread-safe manner</p>
+</td>
+                    </tr>
+                
+                    <tr>
+                        <td><a class='stability Experimental' title='Experimental'></a><a class='struct' href='struct.SpinlockGuard.html'
+                               title='spinlock::SpinlockGuard'>SpinlockGuard</a></td>
+                        <td class='docblock short'><p>A guard to which the protected data can be accessed</p>
+</td>
+                    </tr>
+                </table></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <div id="help" class="hidden">
+        <div class="shortcuts">
+            <h1>Keyboard shortcuts</h1>
+            <dl>
+                <dt>?</dt>
+                <dd>Show this help dialog</dd>
+                <dt>S</dt>
+                <dd>Focus the search field</dd>
+                <dt>&larrb;</dt>
+                <dd>Move up in search results</dd>
+                <dt>&rarrb;</dt>
+                <dd>Move down in search results</dd>
+                <dt>&#9166;</dt>
+                <dd>Go to active search result</dd>
+            </dl>
+        </div>
+        <div class="infos">
+            <h1>Search tricks</h1>
+            <p>
+                Prefix searches with a type followed by a colon (e.g.
+                <code>fn:</code>) to restrict the search to a given type.
+            </p>
+            <p>
+                Accepted types are: <code>fn</code>, <code>mod</code>,
+                <code>struct</code>, <code>enum</code>,
+                <code>trait</code>, <code>typedef</code> (or
+                <code>tdef</code>).
+            </p>
+        </div>
+    </div>
+
+    
+
+    <script>
+        window.rootPath = "../";
+        window.currentCrate = "spinlock";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../jquery.js"></script>
+    <script src="../main.js"></script>
+    
+    <script async src="../search-index.js"></script>
+</body>
+</html>
