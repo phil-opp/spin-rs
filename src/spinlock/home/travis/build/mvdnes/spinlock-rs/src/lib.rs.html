@@ -306,8 +306,8 @@
 <span class='doccomment'>//! assert_eq!(answer, numthreads);</span>
 <span class='doccomment'>//! ```</span>
 
-<span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>sync</span>::<span class='ident'>atomics</span>::{<span class='ident'>AtomicBool</span>, <span class='ident'>SeqCst</span>};
-<span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>ty</span>::<span class='ident'>Unsafe</span>;
+<span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>sync</span>::<span class='ident'>atomic</span>::{<span class='ident'>AtomicBool</span>, <span class='ident'>SeqCst</span>};
+<span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>cell</span>::<span class='ident'>UnsafeCell</span>;
 <span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>rt</span>::<span class='ident'>local</span>::<span class='ident'>Local</span>;
 <span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>rt</span>::<span class='ident'>task</span>::<span class='ident'>Task</span>;
 
@@ -315,7 +315,7 @@
 <span class='kw'>pub</span> <span class='kw'>struct</span> <span class='ident'>Spinlock</span><span class='op'>&lt;</span><span class='ident'>T</span><span class='op'>&gt;</span>
 {
     <span class='ident'>lock</span>: <span class='ident'>AtomicBool</span>,
-    <span class='ident'>data</span>: <span class='ident'>Unsafe</span><span class='op'>&lt;</span><span class='ident'>T</span><span class='op'>&gt;</span>,
+    <span class='ident'>data</span>: <span class='ident'>UnsafeCell</span><span class='op'>&lt;</span><span class='ident'>T</span><span class='op'>&gt;</span>,
 }
 
 <span class='doccomment'>/// A guard to which the protected data can be accessed</span>
@@ -337,7 +337,7 @@
         <span class='ident'>Spinlock</span>
         {
             <span class='ident'>lock</span>: <span class='ident'>AtomicBool</span>::<span class='ident'>new</span>(<span class='boolval'>false</span>),
-            <span class='ident'>data</span>: <span class='ident'>Unsafe</span>::<span class='ident'>new</span>(<span class='ident'>user_data</span>),
+            <span class='ident'>data</span>: <span class='ident'>UnsafeCell</span>::<span class='ident'>new</span>(<span class='ident'>user_data</span>),
         }
     }
 
