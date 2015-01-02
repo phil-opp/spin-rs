@@ -83,6 +83,8 @@ use core::atomic::{AtomicBool, Ordering, INIT_ATOMIC_BOOL};
 use core::cell::UnsafeCell;
 use core::kinds::Sync;
 use core::ops::{Drop, Deref, DerefMut};
+use core::option::Option;
+use core::option::Option::{Some, None};
 
 /// A wrapper for the data giving access in a thread-safe manner
 pub struct Spinlock<T>
@@ -137,9 +139,14 @@ impl<T> Spinlock<T>
         }
     }
 
+    #[inline]
+    fn try_obtain_lock(&self) -> bool {
+        self.lock.compare_and_swap(false, true, Ordering::SeqCst) == false
+    }
+
     fn obtain_lock(&self)
     {
-        while self.lock.compare_and_swap(false, true, Ordering::SeqCst) != false
+        while !self.try_obtain_lock()
         {
             // Do nothing
         }
@@ -167,6 +174,40 @@ impl<T> Spinlock<T>
             lock: &self.lock,
             data: unsafe { &mut *self.data.get() },
         }
+    }
+
+    /// Attempts to locks the spinlock.
+    ///
+    /// If the spinlock could not be acquired at this time, then `None` is returned.
+    /// Otherwise, an RAII guard is returned. The spinlock will be unlocked when the
+    /// guard is dropped.
+    ///
+    /// This function does not block.
+    ///
+    ///
+    /// ```
+    /// let mylock = spinlock::Spinlock::new(0u);
+    /// {
+    ///     match mylock.try_lock() {
+    ///         Some(mut data) => {
+    ///             // The data can be accessed
+    ///             *data += 1;
+    ///         },
+    ///         None => panic!("could not acquire lock"),
+    ///     }
+    /// }
+    /// ```
+    pub fn try_lock(&self) -> Option<SpinlockGuard<T>>
+    {
+        if self.try_obtain_lock() {
+            Some(SpinlockGuard {
+                lock: &self.lock,
+                data: unsafe { &mut *self.data.get() },
+            })
+        } else {
+            None
+        }
+
     }
 }
 
