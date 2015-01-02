@@ -192,9 +192,12 @@ impl<T> Spinlock<T>
     ///         Some(mut data) => {
     ///             // The data can be accessed
     ///             *data += 1;
+    ///             assert!(mylock.try_lock().is_none());
     ///         },
     ///         None => panic!("could not acquire lock"),
     ///     }
+    ///     assert!(mylock.try_lock().is_some());
+    ///     assert_eq!(*mylock.try_lock().unwrap(), 1);
     /// }
     /// ```
     pub fn try_lock(&self) -> Option<SpinlockGuard<T>>
