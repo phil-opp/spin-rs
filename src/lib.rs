@@ -2,6 +2,7 @@
 #![experimental]
 #![crate_type = "lib"]
 #![feature(unsafe_destructor)]
+#![feature(associated_types)]
 #![warn(missing_docs)]
 
 #![no_std]
@@ -79,7 +80,7 @@
 #[cfg(test)] extern crate std;
 extern crate core;
 
-use core::atomic::{AtomicBool, Ordering, INIT_ATOMIC_BOOL};
+use core::atomic::{AtomicBool, Ordering, ATOMIC_BOOL_INIT};
 use core::cell::UnsafeCell;
 use core::kinds::Sync;
 use core::ops::{Drop, Deref, DerefMut};
@@ -108,9 +109,9 @@ unsafe impl<T> Sync for Spinlock<T> {}
 /// A Spinlock which may be used statically.
 ///
 /// ```
-/// use spinlock::{StaticSpinlock, INIT_STATIC_SPINLOCK};
+/// use spinlock::{StaticSpinlock, STATIC_SPINLOCK_INIT};
 ///
-/// static SPLCK: StaticSpinlock = INIT_STATIC_SPINLOCK;
+/// static SPLCK: StaticSpinlock = STATIC_SPINLOCK_INIT;
 ///
 /// fn demo() {
 ///     let lock = SPLCK.lock();
@@ -121,10 +122,13 @@ unsafe impl<T> Sync for Spinlock<T> {}
 pub type StaticSpinlock = Spinlock<()>;
 
 /// A initializer for StaticSpinlock, containing no data.
-pub const INIT_STATIC_SPINLOCK: StaticSpinlock = Spinlock {
-    lock: INIT_ATOMIC_BOOL,
+pub const STATIC_SPINLOCK_INIT: StaticSpinlock = Spinlock {
+    lock: ATOMIC_BOOL_INIT,
     data: UnsafeCell { value: () },
 };
+
+#[deprecated = "renamed to STATIC_SPINLOCK_INIT"]
+pub const INIT_STATIC_SPINLOCK: StaticSpinlock = STATIC_SPINLOCK_INIT;
 
 impl<T> Spinlock<T>
 {
@@ -134,7 +138,7 @@ impl<T> Spinlock<T>
     {
         Spinlock
         {
-            lock: INIT_ATOMIC_BOOL,
+            lock: ATOMIC_BOOL_INIT,
             data: UnsafeCell::new(user_data),
         }
     }
@@ -214,12 +218,13 @@ impl<T> Spinlock<T>
     }
 }
 
-impl<'a, T> Deref<T> for SpinlockGuard<'a, T>
+impl<'a, T> Deref for SpinlockGuard<'a, T>
 {
+    type Target = T;
     fn deref<'b>(&'b self) -> &'b T { &*self.data }
 }
 
-impl<'a, T> DerefMut<T> for SpinlockGuard<'a, T>
+impl<'a, T> DerefMut for SpinlockGuard<'a, T>
 {
     fn deref_mut<'b>(&'b mut self) -> &'b mut T { &mut *self.data }
 }
