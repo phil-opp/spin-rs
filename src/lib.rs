@@ -81,7 +81,7 @@ extern crate core;
 
 use core::atomic::{AtomicBool, Ordering, ATOMIC_BOOL_INIT};
 use core::cell::UnsafeCell;
-use core::kinds::Sync;
+use core::marker::Sync;
 use core::ops::{Drop, Deref, DerefMut};
 use core::option::Option;
 use core::option::Option::{Some, None};
